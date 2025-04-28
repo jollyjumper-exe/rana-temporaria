@@ -75,7 +75,8 @@ async function initSky(){
         }
     });
 
-    const skyGeometry = new THREE.SphereGeometry(1000, 60, 40);
+    const skyGeometry = new THREE.SphereGeometry(500, 60, 40); // Increase radius
+
     const sky = new THREE.Mesh(skyGeometry, skyMaterial);
     scene.add(sky);
 
