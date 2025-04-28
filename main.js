@@ -7,33 +7,62 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-init();
-
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-
-scene.add(cube);
-
 let normalizedMouseY = 0;
 
 window.addEventListener('mousemove', (event) => {
     let mouseY = event.clientY;  
     normalizedMouseY = mouseY / window.innerHeight;  
-  });
+});
 
-animate();
+let cube;
+let sky;
+
+async function init() {
+    cube = await initCube();
+    sky = await initSky();
+    animate();
+}
+
+init();
 
 function animate() {
     requestAnimationFrame(animate);
-
-    cube.rotation.x += 0.05*normalizedMouseY;
-    cube.rotation.y += 0.05*normalizedMouseY;
+    
+    if(cube)
+    {
+        cube.rotation.x += 0.05*normalizedMouseY;
+        cube.rotation.y += 0.05*normalizedMouseY;
+    }
 
     renderer.render(scene, camera);
 }
 
-async function init() {
+async function initCube() {
+
+    const geometry = new THREE.TorusGeometry();
+
+    const vertexShaderSource = await loadShader('shaders/phong.vertex.glsl');
+    const fragmentShaderSource = await loadShader('shaders/phong.fragment.glsl');
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader : vertexShaderSource,
+        fragmentShader : fragmentShaderSource,
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(5, 5, 5) }, // Light position
+            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, // Ambient light color
+            diffuseColor: { value: new THREE.Color(0.7, 0.7, 0.7) }, // Diffuse light color
+            specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) }, // Specular reflection color
+            shininess: { value: 100.0 } // Shininess factor for specular reflection
+        }
+    });
+
+    cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+    return cube;
+}
+
+async function initSky(){
+
     const vertexShaderSource = await loadShader('shaders/skybox.vertex.glsl');
     const fragmentShaderSource = await loadShader('shaders/skybox.fragment.glsl');
 
@@ -44,12 +73,16 @@ async function init() {
         uniforms: {
           resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) } // Set resolution uniform
         }
-      });
+    });
 
     const skyGeometry = new THREE.SphereGeometry(1000, 60, 40);
     const sky = new THREE.Mesh(skyGeometry, skyMaterial);
     scene.add(sky);
+
+    return sky;
 }
+
+
 
 function loadShader(url) {
     return fetch(url)
