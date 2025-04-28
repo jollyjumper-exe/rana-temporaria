@@ -1,0 +1,27 @@
+# Treat text files properly
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Treat 3D models and binary files properly
+*.glb binary
+*.gltf text eol=lf
+*.bin binary
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg text
+
+# Fonts
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# Handle shaders (if you ever use them)
+*.vert text
+*.frag text
