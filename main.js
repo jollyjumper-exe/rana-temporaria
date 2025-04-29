@@ -14,12 +14,24 @@ window.addEventListener('mousemove', (event) => {
     normalizedMouseY = mouseY / window.innerHeight;  
 });
 
+window.addEventListener('click', () => {
+    currentMaterialIndex = (currentMaterialIndex + 1) % materialsList.length;
+    cube.material = materialsList[currentMaterialIndex];
+});
+
 let cube;
 let sky;
+
+const materialsList = [];
+let currentMaterialIndex = 0;
 
 async function init() {
     cube = await initCube();
     sky = await initSky();
+
+    materialsList.push(await loadPhongMaterial());
+    materialsList.push(await loadTigerMaterial());
+    materialsList.push(await loadWaterMaterial());
     animate();
 }
 
@@ -30,7 +42,7 @@ function animate() {
     
     if(cube)
     {
-        cube.material.uniforms.time.value = performance.now() * 0.001;
+        if(cube.material.uniforms.time) cube.material.uniforms.time.value = performance.now() * 0.001;
         cube.rotation.x += 0.05*normalizedMouseY;
         cube.rotation.y += 0.05*normalizedMouseY;
     }
@@ -42,7 +54,7 @@ async function initCube() {
 
     const geometry = new THREE.TorusGeometry();
 
-    const material = await loadTigerMaterial();
+    const material = await loadPhongMaterial();
 
     cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
@@ -111,9 +123,29 @@ async function loadTigerMaterial() {
             ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
             specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
             shininess: { value: 100.0 }, 
-            baseColor: { value: new THREE.Color(0.02, 0.02, 0.05) }, 
+            diffuseColor: { value: new THREE.Color(0.02, 0.02, 0.05) }, 
             outerStripeColor: { value: new THREE.Color(0.1, 0.6, 0.8) },
             innerStripeColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
+            time: { value: 0.0 },
+        }
+    });
+
+    return material;
+}
+
+async function loadWaterMaterial() {
+    const vertexShaderSource = await loadShader('shaders/water.vertex.glsl');
+    const fragmentShaderSource = await loadShader('shaders/water.fragment.glsl');
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader : vertexShaderSource,
+        fragmentShader : fragmentShaderSource,
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
+            diffuseColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
+            specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+            shininess: { value: 30.0 }, 
             time: { value: 0.0 },
         }
     });
