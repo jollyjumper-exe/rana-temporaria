@@ -29,6 +29,7 @@ async function init() {
     cube = await initCube();
     sky = await initSky();
 
+    materialsList.push(await loadUnlitMaterial());
     materialsList.push(await loadPhongMaterial());
     materialsList.push(await loadTigerMaterial());
     materialsList.push(await loadWaterMaterial());
@@ -54,7 +55,7 @@ async function initCube() {
 
     const geometry = new THREE.TorusGeometry();
 
-    const material = await loadPhongMaterial();
+    const material = await loadUnlitMaterial();
 
     cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
@@ -147,6 +148,21 @@ async function loadWaterMaterial() {
             specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
             shininess: { value: 30.0 }, 
             time: { value: 0.0 },
+        }
+    });
+
+    return material;
+}
+
+async function loadUnlitMaterial() {
+    const vertexShaderSource = await loadShader('shaders/unlit.vertex.glsl');
+    const fragmentShaderSource = await loadShader('shaders/unlit.fragment.glsl');
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader : vertexShaderSource,
+        fragmentShader : fragmentShaderSource,
+        uniforms: {
+            color: { value: new THREE.Color(0.0, 1.0, 0.0) }
         }
     });
 
