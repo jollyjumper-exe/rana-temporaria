@@ -144,9 +144,9 @@ async function loadWaterMaterial() {
         uniforms: {
             lightPosition: { value: new THREE.Vector3(5, 5, 5) },
             ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
-            diffuseColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
+            diffuseColor: { value: new THREE.Color(0.0, 0.7, 0.9) },
             specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
-            shininess: { value: 30.0 }, 
+            shininess: { value: 100.0 }, 
             time: { value: 0.0 },
         }
     });
