@@ -16,7 +16,7 @@ window.addEventListener('mousemove', (event) => {
 
 window.addEventListener('click', () => {
     currentMaterialIndex = (currentMaterialIndex + 1) % materialsList.length;
-    cube.material = materialsList[currentMaterialIndex];
+    cube.material = materialsList[currentMaterialIndex].material;
 });
 
 let cube;
@@ -33,6 +33,10 @@ async function init() {
     materialsList.push(await loadPhongMaterial());
     materialsList.push(await loadTigerMaterial());
     materialsList.push(await loadWaterMaterial());
+    materialsList.push(await loadWireframeMaterial());
+
+    cube.material = materialsList[currentMaterialIndex].material;
+
     animate();
 }
 
@@ -40,22 +44,23 @@ init();
 
 function animate() {
     requestAnimationFrame(animate);
-    
-    if(cube)
-    {
-        if(cube.material.uniforms.time) cube.material.uniforms.time.value = performance.now() * 0.001;
-        cube.rotation.x += 0.05*normalizedMouseY;
-        cube.rotation.y += 0.05*normalizedMouseY;
+
+    const time = performance.now() * 0.001;
+
+    if (cube) {
+        const current = materialsList[currentMaterialIndex];
+        if (current.update) current.update(current.material.uniforms, time, normalizedMouseY);
+
+        cube.rotation.x += 0.05 * normalizedMouseY;
+        cube.rotation.y += 0.05 * normalizedMouseY;
     }
 
     renderer.render(scene, camera);
 }
 
 async function initCube() {
-
     const geometry = new THREE.TorusGeometry();
-
-    const material = await loadUnlitMaterial();
+    const { material } = await loadUnlitMaterial();  // Initial material
 
     cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
@@ -63,21 +68,19 @@ async function initCube() {
 }
 
 async function initSky() {
-
     const vertexShaderSource = await loadShader('shaders/skybox.vertex.glsl');
     const fragmentShaderSource = await loadShader('shaders/skybox.fragment.glsl');
 
     const skyMaterial = new THREE.ShaderMaterial({
-        vertexShader : vertexShaderSource,
-        fragmentShader : fragmentShaderSource,
+        vertexShader: vertexShaderSource,
+        fragmentShader: fragmentShaderSource,
         side: THREE.BackSide,
         uniforms: {
-          resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
         }
     });
 
     const skyGeometry = new THREE.SphereGeometry(500, 60, 40);
-
     const sky = new THREE.Mesh(skyGeometry, skyMaterial);
     scene.add(sky);
 
@@ -86,85 +89,128 @@ async function initSky() {
 
 function loadShader(url) {
     return fetch(url)
-      .then(response => response.text())
-      .catch(error => {
-        console.error('Error loading shader:', error);
-        return '';
-    });
+        .then(response => response.text())
+        .catch(error => {
+            console.error('Error loading shader:', error);
+            return '';
+        });
+}
+
+function createMaterialEntry(material, update = null) {
+    return { material, update };
 }
 
 async function loadPhongMaterial() {
-    const vertexShaderSource = await loadShader('shaders/phong.vertex.glsl');
-    const fragmentShaderSource = await loadShader('shaders/phong.fragment.glsl');
+    const vertexShader = await loadShader('shaders/phong.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/phong.fragment.glsl');
+
+    const uniforms = {
+        lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+        ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+        diffuseColor: { value: new THREE.Color(0.7, 0.7, 0.7) },
+        specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+        shininess: { value: 100.0 }
+    };
 
     const material = new THREE.ShaderMaterial({
-        vertexShader : vertexShaderSource,
-        fragmentShader : fragmentShaderSource,
-        uniforms: {
-            lightPosition: { value: new THREE.Vector3(5, 5, 5) },
-            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
-            diffuseColor: { value: new THREE.Color(0.7, 0.7, 0.7) }, 
-            specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) }, 
-            shininess: { value: 100.0 } 
-        }
+        vertexShader,
+        fragmentShader,
+        uniforms
     });
 
-    return material;
+    return createMaterialEntry(material);
 }
 
 async function loadTigerMaterial() {
-    const vertexShaderSource = await loadShader('shaders/tiger.vertex.glsl');
-    const fragmentShaderSource = await loadShader('shaders/tiger.fragment.glsl');
+    const vertexShader = await loadShader('shaders/tiger.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/tiger.fragment.glsl');
+
+    const uniforms = {
+        lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+        ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+        specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+        shininess: { value: 100.0 },
+        diffuseColor: { value: new THREE.Color(0.02, 0.02, 0.05) },
+        outerStripeColor: { value: new THREE.Color(0.1, 0.6, 0.8) },
+        innerStripeColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
+        time: { value: 0.0 }
+    };
 
     const material = new THREE.ShaderMaterial({
-        vertexShader : vertexShaderSource,
-        fragmentShader : fragmentShaderSource,
-        uniforms: {
-            lightPosition: { value: new THREE.Vector3(5, 5, 5) },
-            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
-            specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
-            shininess: { value: 100.0 }, 
-            diffuseColor: { value: new THREE.Color(0.02, 0.02, 0.05) }, 
-            outerStripeColor: { value: new THREE.Color(0.1, 0.6, 0.8) },
-            innerStripeColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
-            time: { value: 0.0 },
-        }
+        vertexShader,
+        fragmentShader,
+        uniforms
     });
 
-    return material;
+    return createMaterialEntry(material, (uniforms, time) => {
+        uniforms.time.value = time;
+    });
 }
 
 async function loadWaterMaterial() {
-    const vertexShaderSource = await loadShader('shaders/water.vertex.glsl');
-    const fragmentShaderSource = await loadShader('shaders/water.fragment.glsl');
+    const vertexShader = await loadShader('shaders/water.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/water.fragment.glsl');
+
+    const uniforms = {
+        lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+        ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+        diffuseColor: { value: new THREE.Color(0.0, 0.7, 0.9) },
+        specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+        shininess: { value: 100.0 },
+        time: { value: 0.0 }
+    };
 
     const material = new THREE.ShaderMaterial({
-        vertexShader : vertexShaderSource,
-        fragmentShader : fragmentShaderSource,
+        vertexShader,
+        fragmentShader,
+        uniforms
+    });
+
+    return createMaterialEntry(material, (uniforms, time) => {
+        uniforms.time.value = time;
+    });
+}
+
+async function loadWireframeMaterial() {
+    const vertexShader = await loadShader('shaders/wireframe.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/wireframe.fragment.glsl');
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        transparent: true,
+        depthWrite: true,
+        side: THREE.DoubleSide,  // or FrontSide if you want only the front
+        //blending: THREE.NormalBlending,
         uniforms: {
+            color: { value: new THREE.Color(0.0, 1.0, 0.0) },
+            power: { value: 0.0 },
             lightPosition: { value: new THREE.Vector3(5, 5, 5) },
-            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, 
-            diffuseColor: { value: new THREE.Color(0.0, 0.7, 0.9) },
+            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+            diffuseColor: { value: new THREE.Color(0.7, 0.0, 0.0) },
             specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
-            shininess: { value: 100.0 }, 
-            time: { value: 0.0 },
+            shininess: { value: 100.0 }
         }
     });
 
-    return material;
+    return createMaterialEntry(material, (uniforms, time, power) => {
+        uniforms.power.value = power;
+    });
 }
 
 async function loadUnlitMaterial() {
-    const vertexShaderSource = await loadShader('shaders/unlit.vertex.glsl');
-    const fragmentShaderSource = await loadShader('shaders/unlit.fragment.glsl');
+    const vertexShader = await loadShader('shaders/unlit.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/unlit.fragment.glsl');
+
+    const uniforms = {
+        color: { value: new THREE.Color(0.0, 1.0, 0.0) }
+    };
 
     const material = new THREE.ShaderMaterial({
-        vertexShader : vertexShaderSource,
-        fragmentShader : fragmentShaderSource,
-        uniforms: {
-            color: { value: new THREE.Color(0.0, 1.0, 0.0) }
-        }
+        vertexShader,
+        fragmentShader,
+        uniforms
     });
 
-    return material;
+    return createMaterialEntry(material);
 }
