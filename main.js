@@ -34,6 +34,7 @@ async function init() {
     materialsList.push(await loadTigerMaterial());
     materialsList.push(await loadWaterMaterial());
     materialsList.push(await loadWireframeMaterial());
+    materialsList.push(await loadCartoonMaterial());
 
     cube.material = materialsList[currentMaterialIndex].material;
 
@@ -204,6 +205,27 @@ async function loadUnlitMaterial() {
 
     const uniforms = {
         color: { value: new THREE.Color(0.0, 1.0, 0.0) }
+    };
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms
+    });
+
+    return createMaterialEntry(material);
+}
+
+async function loadCartoonMaterial() {
+    const vertexShader = await loadShader('shaders/cartoon.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/cartoon.fragment.glsl');
+
+    const uniforms = {
+        lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+        ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+        diffuseColor: { value: new THREE.Color(1.0, 0.5, 0.1) },
+        specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+        shininess: { value: 100.0 }
     };
 
     const material = new THREE.ShaderMaterial({
