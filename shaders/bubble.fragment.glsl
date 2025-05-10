@@ -1,6 +1,5 @@
 uniform vec3 lightPosition;
 uniform vec3 ambientColor;
-uniform vec3 baseColor;
 uniform vec3 specularColor;
 uniform float shininess;
 uniform float time;
@@ -85,7 +84,7 @@ void main() {
 
     float detail1 = perlinNoise(uvOffset * 100.0 + time * 0.1);
     float detail2 = perlinNoise(uvOffset * 150.0 - time * 0.15);
-    float detail3 = perlinNoise(uvOffset * 200.0 + vec2(time * 0.2, -time * 0.1));
+    float detail3 = perlinNoise(uvOffset * 200.0 + vec2(time * 0.05, -time * 0.1));
     float blendedNoise = (detail1 + detail2 * 0.5 + detail3 * 0.25) / 1.75;
     float noiseLine = smoothstep(0.1, 0.3, blendedNoise);
 
@@ -96,7 +95,8 @@ void main() {
     vec3 reflectionDir = reflect(-toCamera, normal);
     vec3 environmentHue = hsv2rgb(vec3(0.6 + 0.4 * reflectionDir.y + time * 0.05, 1.0, 1.0));
 
-    vec3 diffuse = mix(viewIridescence, environmentHue, 0.5);
+    vec3 diffuse = mix(viewIridescence, invertedIridescence, noiseLine/2.0);
+    diffuse = mix(diffuse, environmentHue, 0.5);
 
     vec3 reflectDir = reflect(-toLight, normal);
     float spec = pow(max(dot(toCamera, reflectDir), 0.0), shininess);
