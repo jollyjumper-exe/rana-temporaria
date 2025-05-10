@@ -17,9 +17,13 @@ window.addEventListener('mousemove', (event) => {
 window.addEventListener('click', () => {
     currentMaterialIndex = (currentMaterialIndex + 1) % materialsList.length;
     cube.material = materialsList[currentMaterialIndex].material;
+    sphere.material = materialsList[currentMaterialIndex].material;
+    torus.material = materialsList[currentMaterialIndex].material;
 });
 
 let cube;
+let sphere;
+let torus;
 let sky;
 
 const materialsList = [];
@@ -27,7 +31,10 @@ let currentMaterialIndex = 0;
 
 async function init() {
     cube = await initCube();
+    sphere = await initSphere();
+    torus = await initTorus();
     sky = await initSky();
+
 
     materialsList.push(await loadUnlitMaterial());
     materialsList.push(await loadPhongMaterial());
@@ -57,18 +64,54 @@ function animate() {
         cube.rotation.y += 0.05 * normalizedMouseY;
     }
 
+    if (sphere) {
+        const current = materialsList[currentMaterialIndex];
+        if (current.update) current.update(current.material.uniforms, time, normalizedMouseY);
+
+        sphere.rotation.x += 0.05 * normalizedMouseY;
+        sphere.rotation.y += 0.05 * normalizedMouseY;
+    }
+
+    if (torus) {
+        const current = materialsList[currentMaterialIndex];
+        if (current.update) current.update(current.material.uniforms, time, normalizedMouseY);
+
+        torus.rotation.x += 0.05 * normalizedMouseY;
+        torus.rotation.y += 0.05 * normalizedMouseY;
+    }
+
     renderer.render(scene, camera);
 }
 
 async function initCube() {
-    const geometry = new THREE.SphereGeometry();
+    const geometry = new THREE.BoxGeometry(1.5,1.5,1.5);
     const { material } = await loadUnlitMaterial();  // Initial material
 
     cube = new THREE.Mesh(geometry, material);
+    cube.position.set(2, -2, 0);
     scene.add(cube);
     return cube;
 }
 
+async function initSphere() {
+    const geometry = new THREE.SphereGeometry();
+    const { material } = await loadUnlitMaterial();  // Initial material
+
+    sphere = new THREE.Mesh(geometry, material);
+    sphere.position.set(0, 0, 0);
+    scene.add(sphere);
+    return sphere;
+}
+
+async function initTorus() {
+    const geometry = new THREE.TorusGeometry();
+    const { material } = await loadUnlitMaterial();  // Initial material
+
+    torus = new THREE.Mesh(geometry, material);
+    torus.position.set(-2, 2, 0);
+    scene.add(torus);
+    return torus;
+}
 async function initSky() {
     const vertexShaderSource = await loadShader('shaders/skybox.vertex.glsl');
     const fragmentShaderSource = await loadShader('shaders/skybox.fragment.glsl');
