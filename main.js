@@ -35,6 +35,7 @@ async function init() {
     materialsList.push(await loadWaterMaterial());
     materialsList.push(await loadWireframeMaterial());
     materialsList.push(await loadCartoonMaterial());
+    materialsList.push(await loadBubbleMaterial());
 
     cube.material = materialsList[currentMaterialIndex].material;
 
@@ -60,7 +61,7 @@ function animate() {
 }
 
 async function initCube() {
-    const geometry = new THREE.TorusGeometry();
+    const geometry = new THREE.SphereGeometry();
     const { material } = await loadUnlitMaterial();  // Initial material
 
     cube = new THREE.Mesh(geometry, material);
@@ -235,4 +236,31 @@ async function loadCartoonMaterial() {
     });
 
     return createMaterialEntry(material);
+}
+
+async function loadBubbleMaterial() {
+    const vertexShader = await loadShader('shaders/bubble.vertex.glsl');
+    const fragmentShader = await loadShader('shaders/bubble.fragment.glsl');
+
+    const uniforms = {
+        lightPosition: { value: new THREE.Vector3(5, 5, 5) },
+        ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
+        diffuseColor: { value: new THREE.Color(1.0, 0.3, 0.9) },
+        specularColor: { value: new THREE.Color(1.0, 1.0, 1.0) },
+        shininess: { value: 100.0 },
+        time: { value: 0.0 }
+    };
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        uniforms
+    });
+
+    return createMaterialEntry(material, (uniforms, time, power) => {
+        uniforms.time.value = time;
+    });
 }
